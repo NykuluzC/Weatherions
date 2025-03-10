@@ -1,0 +1,265 @@
+@page "/Search"
+@using Weatherions.Services
+@using Weatherions.Models
+@inject WeatherService WeatherService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<h3 class="card fw-bold text-center" style="background-color:#4CAF50; ">
+    🌤️ Weather Search
+</h3>
+<!-- Card displaying search location and weather information -->
+<div class="card" style="max-width: 500px; margin: auto; background-color: #ea868f" >
+    <div class="card-body text-center">
+        <h5 class="card-title text-center">Search Location</h5>
+        @if (string.IsNullOrEmpty(city))
+        {   
+            <p>No information available. Please search for a location.</p>
+        }
+        else
+        {
+            @if (weatherData?.Current != null && isCityVisible)
+            {
+                <img src="@($"https:{weatherData.Current.Condition.Icon}")" alt="Weather Icon" />
+                <p><strong>Location:</strong> @city</p>
+
+                <p><strong>Temperature:</strong> @weatherData.Current.TempC °C</p>
+                <p><strong>Humidity:</strong> @weatherData.Current.Humidity %</p>
+                <p><strong>Condition:</strong> @weatherData.Current.Condition.Text</p>
+            }
+            else if (isLoading)
+            {
+                <p>Loading...</p>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <p style="color:red;">Error: @errorMessage</p>
+            }
+        }
+    </div>
+</div>
+<!-- 6-Day Forecast Card -->
+<div class="card" style="max-width: 500px; margin: auto; margin-top: 15px; background-color: #ea868f">
+    <div class="card-body text-center">
+        <h5 class="card-title text-center">Search for a Location</h5>
+        <div class="d-flex align-items-center gap-2">
+            <input @bind="city" @bind:event="oninput" placeholder="Enter city" class="form-control w-auto" style="flex: 1;" />
+            <button class="btn btn-primary" @onclick="GetWeather">Search</button>
+
+            @if (citySuggestions.Count > 0)
+            {
+                <ul class="list-group" style="position:absolute; top: 100%; margin: auto; background:white; width:300px; border:1px solid #ccc; padding:5px; z-index:1000;">
+                    @foreach (var suggestion in citySuggestions)
+                    {
+                        <li class="list-group-item" style="cursor:pointer;" @onclick="() => SelectCity(suggestion)">
+                            @suggestion.Name, @suggestion.Region, @suggestion.Country
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+<div class="container mt-4">
+    <div class="row">
+        @if (forecastData?.ForecastDays?.ForecastDays != null && forecastData.ForecastDays.ForecastDays.Count > 0)
+        {
+            @foreach (var forecastDay in forecastData.ForecastDays.ForecastDays.Skip(1))
+            {
+                <div class="col-sm-2 mb-3">
+                    <div class="card" style="background-color: #f5f5f5; border: 1px solid #ddd;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">@forecastDay.Date</h5>
+
+                            @if (forecastDay.Day?.Condition?.Icon != null)
+                            {
+                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")" alt="Weather Icon" />
+                            }
+                            else
+                            {
+                                <img src="https://via.placeholder.com/100" alt="Default Weather Icon" />
+                            }
+
+                            @if (forecastDay.Day?.AvgTempC != null)
+                            {
+                                <p><strong>Avg Temp:</strong> @forecastDay.Day?.AvgTempC °C</p>
+                            }
+                            else
+                            {
+                                <p><strong>Avg Temp:</strong> Data unavailable</p>
+                            }
+
+                            @if (forecastDay.Day?.AvgHumidity != null)
+                            {
+                                <p><strong>Humidity:</strong> @forecastDay.Day?.AvgHumidity %</p>
+                            }
+                            else
+                            {
+                                <p><strong>Humidity:</strong> Data unavailable</p>
+                            }
+
+                            @if (forecastDay.Day?.Condition?.Text != null)
+                            {
+                                <p><strong>Condition:</strong> @forecastDay.Day?.Condition?.Text</p>
+                            }
+                            else
+                            {
+                                <p><strong>Condition:</strong> Data unavailable</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <p>Loading forecast...</p>
+            </div>
+        }
+    </div>
+</div>
+@code {
+
+    private bool isSelectingCity = false; // Flag to prevent FetchCities when selecting a city
+    private bool isCityVisible = false;  // Flag to control visibility of the city value
+    private ForecastData? forecastData; // Updated to hold the forecast data
+
+    private string _city = "";
+    private string city
+    {
+        get => _city;
+        set
+        {
+            if (_city != value) // Prevent unnecessary updates
+            {
+                _city = value;
+                if (!isSelectingCity) // Only fetch if user is typing
+                {
+                    isCityVisible = false;
+                    FetchCities();
+                }
+            }
+        }
+    }
+    private WeatherData? weatherData = new WeatherData();
+    private bool isLoading = false;
+    private string? errorMessage;
+    private List<Location> citySuggestions = new();
+    private async Task FetchCities()
+    {
+        if (string.IsNullOrWhiteSpace(city) || city.Length < 2)
+        {
+            citySuggestions.Clear();
+            StateHasChanged(); // Force UI update
+            return;
+        }
+
+        try
+        {
+            citySuggestions = await WeatherService.GetCitySuggestionsAsync(city);
+            Console.WriteLine($"Fetched {citySuggestions.Count} suggestions"); // Debugging
+            StateHasChanged(); // ✅ Force UI refresh after fetching data
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching city suggestions: {ex.Message}");
+        }
+    }
+
+    private async Task GetWeather()
+    {
+        isLoading = true;
+        errorMessage = null;
+        isCityVisible = true; // Make the city data visible after search
+
+        try
+        {
+            var fetchedData = await WeatherService.GetWeatherAsync(city);
+            
+            if (fetchedData != null)
+            {
+                weatherData = fetchedData;
+                
+                // Now use the latitude and longitude from the fetched data to get the forecast
+                // Now use the latitude and longitude from the fetched data to get the forecast
+                var latitude = weatherData.Location?.Latitude;
+                var longitude = weatherData.Location?.Longitude;
+                Console.WriteLine(latitude.Value);
+                Console.WriteLine(longitude.Value);
+                if (latitude.HasValue && longitude.HasValue)
+                {
+                    Console.WriteLine($"Fetching forecast for lat: {latitude.Value}, long: {longitude.Value}");
+                    forecastData = await WeatherService.GetForecastByCoordinatesAsync(latitude.Value, longitude.Value); // Fetch forecast data by coordinates
+                    
+                    // Check if forecastData is not null
+                    if (forecastData != null)
+                    {
+                        // Example: Check and print some values from the forecastData
+                        Console.WriteLine("Forecast Data received:");
+        
+                        // Assuming forecastData has a list or array of forecast entries, like `forecastData.Forecasts`
+                        if (forecastData.ForecastDays?.ForecastDays != null)
+                        {
+                            foreach (var forecast in forecastData.ForecastDays.ForecastDays)
+                            {
+                                Console.WriteLine($"Date: {forecast.Date}, Temperature: {forecast.Day?.AvgTempC}°C, Condition: {forecast.Day?.Condition?.Text}");
+                            }
+                            StateHasChanged(); // Force UI update after receiving forecast data
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("No forecast data available.");
+                            StateHasChanged(); // Force UI update after receiving forecast data
+
+                        }
+
+                        // You can also check other properties of forecastData like warnings, etc.
+                    }
+                    else
+                    {
+                        Console.WriteLine("No forecast data returned.");
+                        StateHasChanged(); // Force UI update after receiving forecast data
+                    }
+                }
+                else
+                {
+                    // Handle the case where latitude or longitude is null
+                    errorMessage = "Invalid coordinates. Unable to fetch forecast.";
+                    StateHasChanged(); // Force UI update after receiving forecast data
+                }
+            }
+            else
+            {
+                errorMessage = "Failed to fetch weather data.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+            StateHasChanged(); // Force UI update after receiving forecast data
+
+        }
+        
+        finally
+        {
+            isLoading = false;
+            StateHasChanged(); // Force UI update after receiving forecast data
+
+        }
+    }
+
+    // ✅ Set city from suggestion and clear dropdown
+    private async Task SelectCity(Location selectedCity)
+    {
+        isSelectingCity = true; // Prevent autocomplete from triggering again
+
+        city = $"{selectedCity.Name}, {selectedCity.Region}, {selectedCity.Country}"; // Store full location
+        citySuggestions.Clear(); // Hide dropdown
+
+        await Task.Delay(1); // Ensure Blazor processes changes
+        isSelectingCity = false; // Reset flag for future typing
+        StateHasChanged(); // Force UI refresh
+    }
+}

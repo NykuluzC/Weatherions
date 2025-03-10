@@ -1,0 +1,42 @@
+@inject HttpClient Http
+@using Weatherions.Models
+<h3>Weather Location Search</h3>
+<input @bind="SearchQuery" @bind:event="oninput" placeholder="Enter location..." class="form-control" />
+<ul class="list-group">
+    @if (Locations != null)
+    {
+        @foreach (var location in Locations)
+        {
+            <li class="list-group-item" @onclick="() => SelectLocation(location)">
+                @location.Name, @location.Region, @location.Country
+            </li>
+        }
+    }
+</ul>
+
+@code {
+    private string SearchQuery = "";
+    private List<Location> Locations = new();
+
+    private async Task FetchLocations()
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery) || SearchQuery.Length < 2) return;
+
+        try
+        {
+            string apiKey = "YOUR_API_KEY";
+            string url = $"v1/search.json?key={apiKey}&q={SearchQuery}";
+            Locations = await Http.GetFromJsonAsync<List<Location>>(url) ?? new List<Location>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching locations: {ex.Message}");
+        }
+    }
+
+    private void SelectLocation(Location location)
+    {
+        SearchQuery = $"{location.Name}, {location.Region}, {location.Country}";
+        Locations.Clear(); // Hide suggestions after selection
+    }
+}

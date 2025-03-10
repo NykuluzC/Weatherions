@@ -1,0 +1,157 @@
+﻿@page "/"
+@using Weatherions.Services
+@using Weatherions.Models
+@inject WeatherService WeatherService
+@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+<h3 class="card fw-bold text-center" style="background-color:#4CAF50; ">
+    🌤️ Weather in my Area
+</h3>
+<!-- Card displaying search location and weather information -->
+<div class="card" style="max-width: 500px; margin: auto; background-color: #ea868f" >
+    <div class="card-body text-center">
+        <h5 class="card-title text-center">My Location</h5>
+        @if (string.IsNullOrEmpty(city))
+        {
+            <p>No information available. Please search for a location.</p>
+        }
+        else
+        {
+            @if (weatherData?.Current != null)
+            {
+                <img src="@($"https:{weatherData.Current.Condition.Icon}")" alt="Weather Icon" />
+                <p><strong>Location:</strong> @city</p>
+
+                <p><strong>Temperature:</strong> @weatherData.Current.TempC °C</p>
+                <p><strong>Humidity:</strong> @weatherData.Current.Humidity %</p>
+                <p><strong>Condition:</strong> @weatherData.Current.Condition.Text</p>
+            }
+            else if (isLoading)
+            {
+                <p>Loading...</p>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <p style="color:red;">Error: @errorMessage</p>
+            }
+        }
+    </div>
+</div>
+
+<!-- Card for the Search Form (with city input, "Use My Location" button, and "Search" button) -->
+
+<!-- Cards for the 6-day forecast (aligned horizontally) -->
+<!-- Cards for the 6-day forecast (aligned horizontally) -->
+<!-- Cards for the 6-day forecast (aligned horizontally) -->
+<!-- Cards for the 6-day forecast (aligned horizontally) -->
+<div class="container mt-4">
+    <div class="row">
+        @if (weatherData?.Forecast?.ForecastDays?.ForecastDays != null && weatherData.Forecast.ForecastDays.ForecastDays.Count > 0)
+        {
+            @foreach (var forecastDay in weatherData.Forecast.ForecastDays.ForecastDays.Skip(1)) // Skip today
+            {
+                <div class="col-sm-2 mb-3"> <!-- Adjust size as needed -->
+                    <div class="card" style="background-color: #f5f5f5; border: 1px solid #ddd;">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">@forecastDay.Date</h5>
+
+                            @if (forecastDay.Day?.Condition?.Icon != null)
+                            {
+                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")" alt="Weather Icon" />
+                            }
+                            else
+                            {
+                                <img src="https://via.placeholder.com/100" alt="Default Weather Icon" />
+                            }
+
+                            @if (forecastDay.Day?.AvgTempC != null)
+                            {
+                                <p><strong>Avg Temp:</strong> @forecastDay.Day?.AvgTempC °C</p>
+                            }
+                            else
+                            {
+                                <p><strong>Avg Temp:</strong> Data unavailable</p>
+                            }
+
+                            @if (forecastDay.Day?.AvgHumidity != null)
+                            {
+                                <p><strong>Humidity:</strong> @forecastDay.Day?.AvgHumidity %</p>
+                            }
+                            else
+                            {
+                                <p><strong>Humidity:</strong> Data unavailable</p>
+                            }
+
+                            @if (forecastDay.Day?.Condition?.Text != null)
+                            {
+                                <p><strong>Condition:</strong> @forecastDay.Day?.Condition?.Text</p>
+                            }
+                            else
+                            {
+                                <p><strong>Condition:</strong> Data unavailable</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <p>Loading forecast...</p>
+            </div>
+        }
+    </div>
+</div>
+@code {
+    private string city;
+    private WeatherData? weatherData = new WeatherData(); // Initialize to prevent null reference
+    private bool isLoading = false;
+    private string? errorMessage;
+    private ForecastData? forecastData; // Updated to hold the forecast data
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UseMyLocation();
+    }
+    private async Task UseMyLocation()
+    {
+        try
+        {
+            isLoading = true;
+            await JS.InvokeVoidAsync("eval", "console.log('JavaScript Loaded');"); // Debugging
+
+            var result = await JS.InvokeAsync<GeolocationResult>("getLocation");
+
+            if (result.Success)
+            {
+                weatherData = await WeatherService.GetWeatherByCoordinatesAsync(result.Latitude, result.Longitude);
+                forecastData = await WeatherService.GetForecastByCoordinatesAsync(result.Latitude, result.Longitude); // Fetch ForecastData
+
+                // If forecast data is available, store it in the forecastData object
+                if (forecastData != null)
+                {
+                    weatherData.Forecast = forecastData; // Make sure you assign the data properly
+                }
+
+                city = $"{weatherData.Location.Name}, {weatherData.Location.Region}, {weatherData.Location.Country}";
+                StateHasChanged();
+            }
+            else
+            {
+                errorMessage = "Could not get location.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}
+}

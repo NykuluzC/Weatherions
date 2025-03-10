@@ -1,0 +1,54 @@
+@page "/News"
+@using Weatherions.Services
+@using Newtonsoft.Json
+@using Weatherions.Models
+@using Weatherions.Services
+@inject NewsService newsService
+
+<h3 style="color: white; text-align: center;">
+    <img src="https://img.icons8.com/ios/50/ffffff/sun.png" alt="Cute Weather Icon" style="vertical-align: middle; margin-right: 10px;"/>
+    Weather News
+</h3>
+@if (newsArticles == null)
+{
+    <p style="color: white">Loading news...</p>
+}
+else
+{
+    @foreach (var article in newsArticles)
+    {
+        <div class="news-article" style="background-color: #333; color: white; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+            <h5>@article.Title</h5>
+            <p>@article.Description</p>
+            <a href="@article.Url" target="_blank" style="color: #00bfff;">Read more</a>
+        </div>
+    }
+}
+
+@code {
+    private List<Article> newsArticles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        string query = "weather";  // Modify as needed, e.g., "hurricane", "storm", etc.
+        var newsResponse = await newsService.GetWeatherNews(query);
+    
+        if (string.IsNullOrEmpty(newsResponse))
+        {
+            Console.WriteLine("No data received from API.");
+            return;
+        }
+
+        try
+        {
+            Console.WriteLine("News API response: " + newsResponse); // Log the API response
+            var newsData = JsonConvert.DeserializeObject<NewsApiResponse>(newsResponse);
+            newsArticles = newsData?.Articles;
+            Console.WriteLine("Parsed Articles: " + newsArticles?.Count); // Log the number of articles
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing news response: {ex.Message}");
+        }
+    }
+}
