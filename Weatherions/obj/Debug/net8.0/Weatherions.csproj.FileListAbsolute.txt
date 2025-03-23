@@ -30,3 +30,4 @@
 /Users/nykuluz/RiderProjects/Weatherions/Weatherions/obj/Debug/net8.0/Weatherions.pdb
 /Users/nykuluz/RiderProjects/Weatherions/Weatherions/obj/Debug/net8.0/Weatherions.genruntimeconfig.cache
 /Users/nykuluz/RiderProjects/Weatherions/Weatherions/obj/Debug/net8.0/ref/Weatherions.dll
+/Users/nykuluz/RiderProjects/Weatherions/Weatherions/obj/Debug/net8.0/Weatherions.sourcelink.json

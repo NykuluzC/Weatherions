@@ -61,50 +61,56 @@
     </div>
 </div>
 <div class="container mt-4">
-    <div class="row">
+    <div class="row justify-content-center">
         @if (forecastData?.ForecastDays?.ForecastDays != null && forecastData.ForecastDays.ForecastDays.Count > 0)
         {
+            var forecastCount = forecastData.ForecastDays.ForecastDays.Count - 1; // Excluding today
+
             @foreach (var forecastDay in forecastData.ForecastDays.ForecastDays.Skip(1))
             {
-                <div class="col-sm-2 mb-3">
-                    <div class="card" style="background-color: #f5f5f5; border: 1px solid #ddd;">
-                        <div class="card-body text-center">
-                            <h5 class="card-title">@forecastDay.Date</h5>
+                <div class="@(forecastCount == 1 ? "col-md-6" : forecastCount == 2 ? "col-md-4" : "col-md-3") col-12 mb-3">
+                    <div class="card border-0 shadow-sm" style="background-color: #f5f5f5; border-radius: 10px;">
+                        <div class="card-body text-center p-3">
+                            <h5 class="card-title fw-bold">@forecastDay.Date</h5>
 
                             @if (forecastDay.Day?.Condition?.Icon != null)
                             {
-                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")" alt="Weather Icon" />
+                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")"
+                                     alt="Weather Icon" class="img-fluid mx-auto d-block"
+                                     style="width: 60px; height: 60px;" />
                             }
                             else
                             {
-                                <img src="https://via.placeholder.com/100" alt="Default Weather Icon" />
+                                <img src="https://via.placeholder.com/100"
+                                     alt="Default Weather Icon" class="img-fluid mx-auto d-block"
+                                     style="width: 60px; height: 60px;" />
                             }
 
                             @if (forecastDay.Day?.AvgTempC != null)
                             {
-                                <p><strong>Avg Temp:</strong> @forecastDay.Day?.AvgTempC °C</p>
+                                <p class="mb-1"><strong>Avg Temp:</strong> @forecastDay.Day?.AvgTempC °C</p>
                             }
                             else
                             {
-                                <p><strong>Avg Temp:</strong> Data unavailable</p>
+                                <p class="mb-1"><strong>Avg Temp:</strong> Data unavailable</p>
                             }
 
                             @if (forecastDay.Day?.AvgHumidity != null)
                             {
-                                <p><strong>Humidity:</strong> @forecastDay.Day?.AvgHumidity %</p>
+                                <p class="mb-1"><strong>Humidity:</strong> @forecastDay.Day?.AvgHumidity %</p>
                             }
                             else
                             {
-                                <p><strong>Humidity:</strong> Data unavailable</p>
+                                <p class="mb-1"><strong>Humidity:</strong> Data unavailable</p>
                             }
 
                             @if (forecastDay.Day?.Condition?.Text != null)
                             {
-                                <p><strong>Condition:</strong> @forecastDay.Day?.Condition?.Text</p>
+                                <p class="mb-0"><strong>Condition:</strong> @forecastDay.Day?.Condition?.Text</p>
                             }
                             else
                             {
-                                <p><strong>Condition:</strong> Data unavailable</p>
+                                <p class="mb-0"><strong>Condition:</strong> Data unavailable</p>
                             }
                         </div>
                     </div>
@@ -113,8 +119,8 @@
         }
         else
         {
-            <div class="col-12">
-                <p>Loading forecast...</p>
+            <div class="col-12 text-center">
+                <p class="fw-bold text-muted">No Forecasts to Display</p>
             </div>
         }
     </div>

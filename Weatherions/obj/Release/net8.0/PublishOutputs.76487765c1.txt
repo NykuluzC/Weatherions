@@ -1,0 +1,8 @@
+/Users/nykuluz/RiderProjects/Weatherions/out/Weatherions
+/Users/nykuluz/RiderProjects/Weatherions/out/appsettings.Development.json
+/Users/nykuluz/RiderProjects/Weatherions/out/appsettings.json
+/Users/nykuluz/RiderProjects/Weatherions/out/Weatherions.dll
+/Users/nykuluz/RiderProjects/Weatherions/out/Weatherions.deps.json
+/Users/nykuluz/RiderProjects/Weatherions/out/Weatherions.runtimeconfig.json
+/Users/nykuluz/RiderProjects/Weatherions/out/Weatherions.pdb
+/Users/nykuluz/RiderProjects/Weatherions/out/Newtonsoft.Json.dll
