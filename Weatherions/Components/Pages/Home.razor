@@ -39,30 +39,28 @@
     </div>
 </div>
 
-<!-- Card for the Search Form (with city input, "Use My Location" button, and "Search" button) -->
-
-<!-- Cards for the 6-day forecast (aligned horizontally) -->
-<!-- Cards for the 6-day forecast (aligned horizontally) -->
-<!-- Cards for the 6-day forecast (aligned horizontally) -->
-<!-- Cards for the 6-day forecast (aligned horizontally) -->
+<!-- Cards for the 2-day forecast (aligned horizontally) -->
+<!-- Cards for the forecast (aligned dynamically) -->
 <div class="container mt-4">
-    <div class="row">
+    <div class="row justify-content-center">
         @if (weatherData?.Forecast?.ForecastDays?.ForecastDays != null && weatherData.Forecast.ForecastDays.ForecastDays.Count > 0)
         {
+            var forecastCount = weatherData.Forecast.ForecastDays.ForecastDays.Count - 1; // Excluding today
+
             @foreach (var forecastDay in weatherData.Forecast.ForecastDays.ForecastDays.Skip(1)) // Skip today
             {
-                <div class="col-sm-2 mb-3"> <!-- Adjust size as needed -->
-                    <div class="card" style="background-color: #f5f5f5; border: 1px solid #ddd;">
+                <div class="@(forecastCount == 1 ? "col-md-6" : forecastCount == 2 ? "col-md-4" : "col-md-3") col-12 mb-3">
+                    <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f5f5f5, #e0e0e0);">
                         <div class="card-body text-center">
                             <h5 class="card-title">@forecastDay.Date</h5>
 
                             @if (forecastDay.Day?.Condition?.Icon != null)
                             {
-                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")" alt="Weather Icon" />
+                                <img src="@($"https:{forecastDay.Day?.Condition?.Icon}")" alt="Weather Icon" class="img-fluid rounded mx-auto d-block"/>
                             }
                             else
                             {
-                                <img src="https://via.placeholder.com/100" alt="Default Weather Icon" />
+                                <img src="https://via.placeholder.com/100" alt="Default Weather Icon" class="img-fluid rounded mx-auto d-block"/>
                             }
 
                             @if (forecastDay.Day?.AvgTempC != null)
@@ -99,7 +97,7 @@
         else
         {
             <div class="col-12">
-                <p>Loading forecast...</p>
+                <p class="fw-bold text-center">Loading forecast...</p>
             </div>
         }
     </div>
